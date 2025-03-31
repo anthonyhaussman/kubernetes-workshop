@@ -1,4 +1,8 @@
-## Helm - Install Metrics Server
+# Helm - Install Metrics Server
+
+Definition of helm : 
+>Helm helps you manage Kubernetes applications — Helm Charts help you define, install, and upgrade even the most complex Kubernetes application.
+>Charts are easy to create, version, share, and publish — so start using Helm and stop the copy-and-paste.
 
 Then to be able to scale our applications in the cluster we should add metrics-server addon in the cluster. 
 
@@ -12,11 +16,7 @@ helm repo update
 helm upgrade --install --set args={--kubelet-insecure-tls} metrics-server metrics-server/metrics-server --namespace kube-system
 ```
 
-We have now a kubernetes cluster ready, we can see pods in it ie : `kubectl get pods -n kube-system`
-
-![minikube-get-pods-kube-system](./images/k-get-pods-1.png)
-
-## Build Docker image
+# Build Docker image
 
 Now we can build the docker image for this hello-world application
 
@@ -24,15 +24,17 @@ Now we can build the docker image for this hello-world application
 docker build -t workshop:1 .
 ```
 
-![docker-build](./images/docker-build.png)
+![docker-build](../images/docker-build.png)
 
-## Create basic helm chart
+And copy the image to be available for our Kubernetes Kind cluster:
+
+```
+> kind load docker-image -n kubernetes-workshop workshop:1
+```
+
+# Create basic helm chart
 
 Let's use helm to create an helm chart.
-
-Definition of helm : 
->Helm helps you manage Kubernetes applications — Helm Charts help you define, install, and upgrade even the most complex Kubernetes application.
->Charts are easy to create, version, share, and publish — so start using Helm and stop the copy-and-paste.
 
 ```
 helm create workshop
@@ -52,7 +54,7 @@ image:
   tag: "1" < tag of the image
 ```
 
-## Deploy the application
+# Deploy the application
 
 Let's deploy it !
 
@@ -62,19 +64,13 @@ First let's create the namespace.
 kubectl create namespace workshop
 ```
 
-Switch to this namespace :
-
-```
-kubens workshop
-```
-
 Deploy the helm chart :
 
 ```
-helm install workshop .
+helm install -n workshop workshop .
 ```
 
-![helm-install](./images/helm-install.png)
+![helm-install](../images/helm-install.png)
 
 Let's check if pods are running now :
 
@@ -82,11 +78,11 @@ Let's check if pods are running now :
 kubectl get pods
 ```
 
-![helm-install](./images/k-get-pods-2.png)
+![helm-install](../images/k-get-pods-2.png)
 
 You should see a pod with the status Running.
 
-## Let's expose it
+# Let's expose it
 
 First we need to change the service type to LoadBalancer in values.yaml
 
@@ -99,16 +95,14 @@ service:
 deploy it with :
 
 ```
-helm upgrade workshop .
+helm upgrade -n workshop workshop .
 ```
 
 Then start a tunnel to minikube to expose the kubernetes service to your local machine : 
 
 ```
-kubectl -n argocd port-forward service/argocd-server 8080:80
+kubectl -n workshop port-forward service/workshop 8080:80
 ```
-
-![minikube-tunnel](./images/minikube-tunnel.png)
 
 And now visit http://localhost:8080 you should see hello world !
 
@@ -120,6 +114,12 @@ build docker image with a tag named 2:
 
 ```
 docker build -t workshop:2 .
+```
+
+And copy the image to be available for our Kubernetes Kind cluster:
+
+```
+> kind load docker-image -n kubernetes-workshop workshop:2
 ```
 
 Modify the tag in values.yaml 
@@ -141,7 +141,7 @@ helm upgrade workshop .
 You should see pods doing a rollout one pod is created and another is terminated when the other one is ready :
 
 
-![deployment-rollout](./images/deployment-rollout.png)
+![deployment-rollout](../images/deployment-rollout.png)
 
 Now when you visit http://localhost you should see :
 
@@ -150,18 +150,6 @@ Hello World! Version 2
 ## 6. Scale automatically your application
 
 !!! Warrning this part can be hard tell me if you can't do it sorry.
-
-We need to edit some configuration to make metrics server more reactive by fetching more frequently : 
-
-```
-kubectl edit deployment metrics-server -n kube-system
-```
-
-Modify under spec/template/containers/args metric-resolution from 60s to 15s
-
-```
-    - --metric-resolution=15s
-```
 
 Enable autoscaling in the helm chart modify in values.yaml : 
 
@@ -194,7 +182,7 @@ helm upgrade workshop .
 You should see a new horizontal pods autoscaler object here 
 min / max , replicas = current number of replicas set by the hpa
 
-![hpa-1](./images/k-get-hpa-1.png)
+![hpa-1](../images/hpa-1.png)
 
 In a splitted terminal follow number of pods and hpa metrics : 
 
@@ -209,7 +197,7 @@ in another one do
 watch kubectl get hpa
 ```
 
-![hpa](./images/watch-1.png)
+![hpa](../images/watch-1.png)
 
 Launch a first load test  : 
 
@@ -219,7 +207,7 @@ echo "GET http://localhost:80/" | vegeta attack -duration=120s -rate 4 -keepaliv
 
 New pod should come
 
-![hpa](./images/k-get-pods-3.png)
+![hpa](../images/k-get-pods-3.png)
 
 if you describe hpa object `kubectl describe hpa workshop` you should see : 
 

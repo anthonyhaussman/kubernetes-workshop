@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-workshop-nginx-test
+  labels:
+    app: nginx-test
+    chart: nginx-test-0.1.0
+    release: k8s-workshop
+    heritage: Helm
+spec:
+  selector:
+    matchLabels:
+      app: nginx-test
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx-test
+        release: k8s-workshop
+    spec:
+      containers:
+        - name: nginx-test
+          image: "nginx:stable"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
