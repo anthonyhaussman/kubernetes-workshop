@@ -2,6 +2,8 @@
 
 ## Requirements
 
+### Only support MacOS / Linux
+
 Install KubeCtl: installation guide MacOS [here](http://kubernetes.io/docs/tasks/tools/)
 
 Install Kind : installation guide [here](https://kind.sigs.k8s.io/docs/user/quick-start/#installing-with-a-package-manager)
