@@ -1,8 +1,9 @@
 # Helm - Install Metrics Server
 
 Definition of helm : 
->Helm helps you manage Kubernetes applications — Helm Charts help you define, install, and upgrade even the most complex Kubernetes application.
->Charts are easy to create, version, share, and publish — so start using Helm and stop the copy-and-paste.
+
+> Helm helps you manage Kubernetes applications — Helm Charts help you define, install, and upgrade even the most complex Kubernetes application.
+> Charts are easy to create, version, share, and publish — so start using Helm and stop the copy-and-paste.
 
 Then to be able to scale our applications in the cluster we should add metrics-server addon in the cluster. 
 
@@ -14,6 +15,12 @@ This install container metrics into the kubernetes api.
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 helm repo update
 helm upgrade --install --set args={--kubelet-insecure-tls} metrics-server metrics-server/metrics-server --namespace kube-system
+```
+
+Check the installation of the package.
+
+```
+kubectl get pod -n kube-system
 ```
 
 # Build Docker image
@@ -58,16 +65,10 @@ image:
 
 Let's deploy it !
 
-First let's create the namespace.
-
-```
-kubectl create namespace workshop
-```
-
 Deploy the helm chart :
 
 ```
-helm install -n workshop workshop .
+helm install -n workshop --create-namespace workshop .
 ```
 
 ![helm-install](../images/helm-install.png)
@@ -75,7 +76,7 @@ helm install -n workshop workshop .
 Let's check if pods are running now :
 
 ```
-kubectl get pods
+kubectl -n workshop get pods
 ```
 
 ![helm-install](../images/k-get-pods-2.png)
@@ -135,11 +136,10 @@ image:
 Deploy the new version with helm :
 
 ```
-helm upgrade workshop .
+helm upgrade -n workshop workshop .
 ```
 
 You should see pods doing a rollout one pod is created and another is terminated when the other one is ready :
-
 
 ![deployment-rollout](../images/deployment-rollout.png)
 
@@ -175,8 +175,9 @@ resources:
 ```
 
 Deploy : 
+
 ```
-helm upgrade workshop .
+helm upgrade -n workshop workshop .
 ```
 
 You should see a new horizontal pods autoscaler object here 
@@ -187,34 +188,34 @@ min / max , replicas = current number of replicas set by the hpa
 In a splitted terminal follow number of pods and hpa metrics : 
 
 in one do : 
+
 ```
-watch kubectl get pods
+watch kubectl -n workshop get pods
 ```
 
 in another one do 
 
 ```
-watch kubectl get hpa
+watch kubectl -n workshop get hpa
 ```
 
 ![hpa](../images/watch-1.png)
 
-Launch a first load test  : 
+After you have recreated a `port-forward`, launch a first load test  : 
 
 ```
-echo "GET http://localhost:80/" | vegeta attack -duration=120s -rate 4 -keepalive false | tee results.bin | vegeta report
+echo "GET http://localhost:8080/" | vegeta attack -duration=120s -rate 4 -keepalive false | tee results.bin | vegeta report
 ```
 
 New pod should come
 
 ![hpa](../images/k-get-pods-3.png)
 
-if you describe hpa object `kubectl describe hpa workshop` you should see : 
+if you describe hpa object `kubectl describe -n workshop hpa workshop` you should see : 
 
 ```
   Normal   SuccessfulRescale             2m15s              horizontal-pod-autoscaler  New size: 2; reason: cpu resource utilization (percentage of request) above target
 ```
-
 
 If we increase rate a new pods should come : 
 
@@ -228,7 +229,8 @@ echo "GET http://localhost:80/" | vegeta attack -duration=120s -rate 7 -keepaliv
 
 Then if we stop scale down should happen after 60s.
 
-event in `kubectl describe hpa workshop` :
+event in `kubectl describe -n workshop hpa workshop` :
+
 ```
   Normal   SuccessfulRescale             8m46s              horizontal-pod-autoscaler  New size: 1; reason: All metrics below target
 ```
@@ -238,6 +240,7 @@ Congrats you deployed you first application and make it scale !
 ## Cleanup
 
 ```
+helm uninstall -n workshop workshop 
 kind delete cluster -n kubernetes-workshop
 ```
 

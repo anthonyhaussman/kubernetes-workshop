@@ -18,7 +18,7 @@ def generate_cpu_load():
 @server.route("/")
 def hello():
    generate_cpu_load()
-   return "Hello World!"
+   return "Hello World! Version 2"
 
 if __name__ == "__main__":
    server.run(host='0.0.0.0', port=80)

@@ -4,9 +4,6 @@ metadata:
   name: k8s-workshop-nginx-test
   labels:
     app: nginx-test
-    chart: nginx-test-0.1.0
-    release: k8s-workshop
-    heritage: Helm
 spec:
   selector:
     matchLabels:
@@ -21,7 +18,6 @@ spec:
       containers:
         - name: nginx-test
           image: "nginx:stable"
-          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           livenessProbe:
